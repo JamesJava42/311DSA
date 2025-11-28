@@ -1,0 +1,43 @@
+name: Autograding Tests
+'on':
+- push
+- repository_dispatch
+permissions:
+  checks: write
+  actions: read
+  contents: read
+jobs:
+  run-autograding-tests:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-classroom[bot]'
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: build test
+      id: build-test
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: build test
+        setup-command: ant clean
+        command: ant build
+        timeout: 10
+        max-score: 50
+    - name: JedisIndexTest
+      id: jedisindextest
+      uses: classroom-resources/autograding-io-grader@v1
+      with:
+        test-name: JedisIndexTest
+        setup-command: ant build
+        command: ant JedisIndexTest
+        input: ''
+        expected-output: "[junit] Tests run: 1, Failures: 0, Errors: 0"
+        comparison-method: contains
+        timeout: 10
+        max-score: 50
+    - name: Autograding Reporter
+      uses: classroom-resources/autograding-grading-reporter@v1
+      env:
+        BUILD-TEST_RESULTS: "${{steps.build-test.outputs.result}}"
+        JEDISINDEXTEST_RESULTS: "${{steps.jedisindextest.outputs.result}}"
+      with:
+        runners: build-test,jedisindextest
